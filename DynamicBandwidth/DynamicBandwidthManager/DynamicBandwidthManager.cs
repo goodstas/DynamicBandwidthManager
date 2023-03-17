@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using DynamicBandwidthCommon;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
@@ -10,12 +11,16 @@ namespace DynamicBandwidth
         private readonly TimeSpan _period;
         private DynamicBandwidthManagerConfiguration _config;
 
+        private SortedList<double, DataType> _remainderPriorities;
+
         public DynamicBandwidthManager(ILogger<DynamicBandwidthManager> logger, IOptions<DynamicBandwidthManagerConfiguration> config)
         {
             _logger = logger;
             _config = config.Value;
             _period = TimeSpan.FromSeconds(config.Value.PeriodInSec);
             IsEnabled = config.Value.Enabled;
+
+            ParseConfig();
         }
 
         public bool IsEnabled { get; set; }
@@ -55,6 +60,19 @@ namespace DynamicBandwidth
                 }
             }
         }
+
+        #region Private Methods
+
+        private void ParseConfig()
+        {
+            _remainderPriorities = new SortedList<double, DataType>();
+            foreach (var chunkConfig in _config.ChunksConfiguration)
+            {
+                _remainderPriorities.Add(chunkConfig.Value.RemainderPriority, chunkConfig.Key);
+            }
+        }
+
+        #endregion
     }
 
     record DynamicBandwidthManagerState(bool IsEnabled);
