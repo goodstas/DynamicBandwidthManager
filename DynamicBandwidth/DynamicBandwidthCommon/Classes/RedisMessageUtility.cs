@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DynamicBandwidthCommon.Classes
+namespace DynamicBandwidthCommon
 {
     public static class RedisMessageUtility
     {
