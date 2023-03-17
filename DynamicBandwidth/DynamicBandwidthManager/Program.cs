@@ -10,6 +10,10 @@ builder.Services.AddHostedService(provider => provider.GetRequiredService<Dynami
 var redisConnectionString = builder.Configuration.GetConnectionString("REDIS_CONNECTION_STRING");
 var provider = new RedisConnectionProvider(redisConnectionString);
 
+builder.Services
+    .AddOptions<DynamicBandwidthManagerConfiguration>()
+    .BindConfiguration("DynamicBandwidthManagerConfiguration");
+
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello DynamicBandwidthManager!");

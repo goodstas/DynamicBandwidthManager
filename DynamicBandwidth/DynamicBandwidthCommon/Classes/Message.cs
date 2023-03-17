@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace DynamicBandwidthCommon
 {
+    [Document(StorageType = StorageType.Json, Prefixes = new string[] { "Message" }, IndexName = "Message-idx")]
     public class Message
     {
         [RedisIdField]

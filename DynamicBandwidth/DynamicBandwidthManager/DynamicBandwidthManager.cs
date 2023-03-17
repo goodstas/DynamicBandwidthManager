@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
 namespace DynamicBandwidth
@@ -6,12 +7,15 @@ namespace DynamicBandwidth
     public class DynamicBandwidthManager : BackgroundService
     {
         private ILogger<DynamicBandwidthManager> _logger;
-        private readonly TimeSpan _period = TimeSpan.FromSeconds(1);
+        private readonly TimeSpan _period;
+        private DynamicBandwidthManagerConfiguration _config;
 
-        public DynamicBandwidthManager(ILogger<DynamicBandwidthManager> logger)
+        public DynamicBandwidthManager(ILogger<DynamicBandwidthManager> logger, IOptions<DynamicBandwidthManagerConfiguration> config)
         {
             _logger = logger;
-            IsEnabled = true;
+            _config = config.Value;
+            _period = TimeSpan.FromSeconds(config.Value.PeriodInSec);
+            IsEnabled = config.Value.Enabled;
         }
 
         public bool IsEnabled { get; set; }

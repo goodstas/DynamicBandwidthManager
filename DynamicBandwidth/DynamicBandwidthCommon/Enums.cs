@@ -5,7 +5,8 @@
         None = 0,
         Track,
         Plot,
-        SensorStatus
+        SensorStatus,
+        MissionStatus
     }
 
     public enum MessagePriority : byte

@@ -11,4 +11,8 @@
     <PackageReference Include="Redis.OM" Version="0.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DynamicBandwidthCommon\DynamicBandwidthCommon.csproj" />
+  </ItemGroup>
+
 </Project>
