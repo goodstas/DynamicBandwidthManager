@@ -18,6 +18,6 @@ builder.Services
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello DynamicBandwidthManager!");
+app.MapGet("/", () => "Hello from DynamicBandwidthManager!");
 
 app.Run();

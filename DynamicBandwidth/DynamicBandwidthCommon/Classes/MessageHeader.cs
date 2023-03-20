@@ -14,6 +14,8 @@ namespace DynamicBandwidthCommon
         [Indexed]
         public Ulid Id { get; set; }
 
+        public string DataType { get; set; }
+
         public double DataSize { get; set; }
 
         [Indexed(Aggregatable =true, Sortable = true)]

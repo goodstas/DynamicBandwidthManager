@@ -7,20 +7,22 @@ namespace DynamicBandwidth
 {
     public class DynamicBandwidthManager : BackgroundService
     {
-        private ILogger<DynamicBandwidthManager> _logger;
-        private readonly TimeSpan _period;
+        private ILogger<DynamicBandwidthManager>     _logger;
+        private readonly TimeSpan                    _wakeUpPeriod;
         private DynamicBandwidthManagerConfiguration _config;
 
         private SortedList<double, DataType> _remainderPriorities;
 
         private RedisMessageUtility _redisMessageUtility;
 
+        private long _lastTimeScan;
+
         public DynamicBandwidthManager(RedisMessageUtility redisMessageUtility , ILogger<DynamicBandwidthManager> logger, IOptions<DynamicBandwidthManagerConfiguration> config)
         {
             _redisMessageUtility = redisMessageUtility;
             _logger = logger;
             _config = config.Value;
-            _period = TimeSpan.FromSeconds(config.Value.PeriodInSec);
+            _wakeUpPeriod = TimeSpan.FromSeconds(config.Value.PeriodInSec);
             IsEnabled = config.Value.Enabled;
 
             ParseConfig();
@@ -32,7 +34,7 @@ namespace DynamicBandwidth
         {
             var stopwatch   = new Stopwatch();
 
-            var  sleepPeriod         = _period;
+            var  sleepPeriod         = _wakeUpPeriod;
             long elapsedMilliseconds = 0;
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -56,9 +58,9 @@ namespace DynamicBandwidth
                     stopwatch.Stop();
                     elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
             
-                    if (stopwatch.ElapsedTicks < _period.Ticks)
+                    if (stopwatch.ElapsedTicks < _wakeUpPeriod.Ticks)
                     {
-                        await Task.Delay(new TimeSpan(_period.Ticks - stopwatch.ElapsedTicks));
+                        await Task.Delay(new TimeSpan(_wakeUpPeriod.Ticks - stopwatch.ElapsedTicks));
                     }
                 }
             }
