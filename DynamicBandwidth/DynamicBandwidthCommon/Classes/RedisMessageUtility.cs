@@ -29,15 +29,34 @@ namespace DynamicBandwidthCommon
             return(message, messageHeader);
         }
 
-        public async Task<string> SaveMessage(IRedisCollection<Message> messages, IRedisCollection<MessageHeader> messagesHeaders, IEnumerable<Message> newMessages, IEnumerable<MessageHeader> newMessageHeaders)
+        public async Task<string> SaveMessage(IRedisCollection<Message> messages, IRedisCollection<MessageHeader> messagesHeaders, IEnumerable<Message> newMessages,IEnumerable<MessageHeader> newMessageHeaders, int messageTTLInSec = -1, int messageHeaderTTLInSec = -1)
         {
             var error = string.Empty;
 
             try
             {
-                var messageKeys = await messages.Insert(newMessages);
+                List<string> messageKeys = null, newMessageHeadersKeys = null;
+                TimeSpan ttl;
 
-                var newMessageHeadersKeys = await messagesHeaders.Insert(newMessageHeaders);
+                if (messageTTLInSec > 0)
+                {
+                    ttl = new TimeSpan(0, 0, messageTTLInSec);
+                    messageKeys = await messages.Insert(newMessages, ttl);
+                }
+                else
+                {
+                    messageKeys = await messages.Insert(newMessages);
+                }
+
+                if (messageHeaderTTLInSec > 0)
+                {
+                    ttl = new TimeSpan(0, 0, messageHeaderTTLInSec);
+                    newMessageHeadersKeys = await messagesHeaders.Insert(newMessageHeaders, ttl);
+                }
+                else
+                {
+                    newMessageHeadersKeys = await messagesHeaders.Insert(newMessageHeaders);
+                }
             }
             catch (Exception ex)
             {
