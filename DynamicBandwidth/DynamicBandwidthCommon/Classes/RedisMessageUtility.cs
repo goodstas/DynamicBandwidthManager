@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace DynamicBandwidthCommon
 {
-    public static class RedisMessageUtility
+    public class RedisMessageUtility
     {
-        public static (Message, MessageHeader) CreateNewMessage(byte[] data, MessagePriority priority)
+        public (Message, MessageHeader) CreateNewMessage(byte[] data, MessagePriority priority)
         {
             var message = new Message()
             {
@@ -29,7 +29,7 @@ namespace DynamicBandwidthCommon
             return(message, messageHeader);
         }
 
-        public static async Task<string> SaveMessage(IRedisCollection<Message> messages, IRedisCollection<MessageHeader> messagesHeaders, IEnumerable<Message> newMessages, IEnumerable<MessageHeader> newMessageHeaders)
+        public async Task<string> SaveMessage(IRedisCollection<Message> messages, IRedisCollection<MessageHeader> messagesHeaders, IEnumerable<Message> newMessages, IEnumerable<MessageHeader> newMessageHeaders)
         {
             var error = string.Empty;
 

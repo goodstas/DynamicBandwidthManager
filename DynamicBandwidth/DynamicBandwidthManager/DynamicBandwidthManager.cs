@@ -13,8 +13,11 @@ namespace DynamicBandwidth
 
         private SortedList<double, DataType> _remainderPriorities;
 
-        public DynamicBandwidthManager(ILogger<DynamicBandwidthManager> logger, IOptions<DynamicBandwidthManagerConfiguration> config)
+        private RedisMessageUtility _redisMessageUtility;
+
+        public DynamicBandwidthManager(RedisMessageUtility redisMessageUtility , ILogger<DynamicBandwidthManager> logger, IOptions<DynamicBandwidthManagerConfiguration> config)
         {
+            _redisMessageUtility = redisMessageUtility;
             _logger = logger;
             _config = config.Value;
             _period = TimeSpan.FromSeconds(config.Value.PeriodInSec);
