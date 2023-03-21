@@ -7,11 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicBandwidthManager", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicBandwidthCommon", "DynamicBandwidthCommon\DynamicBandwidthCommon.csproj", "{1A60A3A5-E67E-417F-95F0-756E5A5DD19C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHandler", "DataHandler\DataHandler.csproj", "{57EDD666-0BA7-4385-94D3-28CABDD4E7B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataHandler", "DataHandler\DataHandler.csproj", "{57EDD666-0BA7-4385-94D3-28CABDD4E7B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHandlerBL", "DataHandlerBL\DataHandlerBL.csproj", "{A2926538-579F-41F9-87FC-330FE68CEA31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataHandlerBL", "DataHandlerBL\DataHandlerBL.csproj", "{A2926538-579F-41F9-87FC-330FE68CEA31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicBandwidthSender", "DynamicBandwidthSender\DynamicBandwidthSender.csproj", "{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicBandwidthSender", "DynamicBandwidthSender\DynamicBandwidthSender.csproj", "{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +35,10 @@ Global
 		{A2926538-579F-41F9-87FC-330FE68CEA31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2926538-579F-41F9-87FC-330FE68CEA31}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2926538-579F-41F9-87FC-330FE68CEA31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
