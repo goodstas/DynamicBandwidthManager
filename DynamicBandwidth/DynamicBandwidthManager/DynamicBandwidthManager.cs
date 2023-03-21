@@ -27,6 +27,8 @@ namespace DynamicBandwidth
 
         private Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>> _dataStorage;
 
+        private Dictionary<string, int> _chunkStatistics;
+
         private long _lastScanTimeStamp = 0;
         private long _currScanTimeStamp = 0;
 
@@ -51,11 +53,18 @@ namespace DynamicBandwidth
 
             _dataStorage = new Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>>();
 
+            _chunkStatistics = new Dictionary<string, int>();
+
             foreach (var dataType in _config.DataTypes)
             {              
                 if (!_dataStorage.ContainsKey(dataType))
                 {
                     _dataStorage.Add(dataType, new Dictionary<MessagePriority, Queue<MessageHeader>>());
+                }
+
+                if (!_chunkStatistics.ContainsKey(dataType))
+                {
+                    _chunkStatistics.Add(dataType, 0);
                 }
 
                 foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
@@ -94,6 +103,8 @@ namespace DynamicBandwidth
                         _logger.LogInformation($"Previous round took {elapsedMilliseconds} milliseconds");
                         _logger.LogInformation($"Start new round at: {now.ToString("HH:mm:ss.fff")}");
 
+                        CleanChunkStatistics();
+
                         FillDataStorage();
 
                         //THE END
@@ -118,6 +129,14 @@ namespace DynamicBandwidth
             }
         }
 
+        private void CleanChunkStatistics()
+        {
+            foreach (var entry in _chunkStatistics)
+            {
+                _chunkStatistics[entry.Key] = 0;
+            }
+        }
+
         private void FillDataStorage()
         {
             var messageHeaders = _redisProvider.RedisCollection<MessageHeader>();
@@ -126,20 +145,25 @@ namespace DynamicBandwidth
             {
                 foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
                 {
+                    var messagePriority     = (MessagePriority)priority;
                     var currMessagePriority = (int)(MessagePriority)priority;
-                    if (currMessagePriority == (int)MessagePriority.None) continue;
+                    if (messagePriority == MessagePriority.None) continue;
 
                     var newMessageHeaders = messageHeaders.Where(header => header.DataType == dataType && header.Priority == currMessagePriority &&
                                                                  header.TimeStamp > _lastScanTimeStamp && header.TimeStamp <= _currScanTimeStamp)
                                                           .OrderBy(header => header.TimeStamp).Select(header => header);
-
-                    var numofMessages = newMessageHeaders.ToList<MessageHeader>().Count;
+                                        
                     foreach (var newMessageHeader in newMessageHeaders)
                     {
-                        
+                        _dataStorage[newMessageHeader.DataType][messagePriority].Enqueue(newMessageHeader);
                     }
                 }
             }
+        }
+
+        private void SelectMessages()
+        {
+            var totalSizeAccumulator = 0;
 
         }
 
