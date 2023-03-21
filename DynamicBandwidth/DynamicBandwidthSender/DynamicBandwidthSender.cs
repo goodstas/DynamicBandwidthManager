@@ -1,23 +1,31 @@
-using System.Text.Json;
 using DynamicBandwidthCommon;
 using Redis.OM;
 using StackExchange.Redis;
+using System.Text.Json;
 
 namespace DynamicBandwidthSender;
 
 public class DynamicBandwidthSender : BackgroundService
 {
     private static ConnectionMultiplexer? _connection;
+    private readonly string _chunkChannel = "chunk-channel";
     private readonly ILogger<DynamicBandwidthSender> _logger;
     private readonly RedisConnectionProvider _provider;
-    private readonly string _chunkChannel = "chunk-channel";
 
     public DynamicBandwidthSender(ILogger<DynamicBandwidthSender> logger, IConfiguration config)
     {
         _logger = logger;
 
         var connectionString = config.GetConnectionString("REDIS_CONNECTION_STRING");
-        _connection = ConnectionMultiplexer.Connect(connectionString);
+        try
+        {
+            _connection = ConnectionMultiplexer.Connect(connectionString);
+        }
+        catch (Exception e)
+        {
+            _logger.Log(LogLevel.Error, e.Message);
+        }
+
         _provider = new($"redis://{connectionString}");
     }
 
@@ -39,8 +47,8 @@ public class DynamicBandwidthSender : BackgroundService
         var messages = await _provider.RedisCollection<Message>().FindByIdsAsync(ids);
 
         foreach (var message in messages)
-        {
-            // create metrics and view in grafana
-        }
+            if (message.Value != null)
+                _logger.Log(LogLevel.Debug, $"Send message: {message.Value.DataType}");
+        // create metrics and view in grafana
     }
 }
