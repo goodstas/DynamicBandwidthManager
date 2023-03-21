@@ -16,7 +16,7 @@ namespace DynamicBandwidth
         private readonly TimeSpan                    _wakeUpPeriod;
         private DynamicBandwidthManagerConfiguration _config;
 
-        private SortedList<double, DataType>         _remainderPriorities;
+        private SortedList<double, string>           _remainderPriorities;
 
         private RedisMessageUtility     _redisMessageUtility;
 
@@ -51,10 +51,8 @@ namespace DynamicBandwidth
 
             _dataStorage = new Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>>();
 
-            foreach (var dataType in Enum.GetNames(typeof(DataType)))
-            {
-                if (dataType.Equals(DataType.None.ToString())) continue;
-                
+            foreach (var dataType in _config.DataTypes)
+            {              
                 if (!_dataStorage.ContainsKey(dataType))
                 {
                     _dataStorage.Add(dataType, new Dictionary<MessagePriority, Queue<MessageHeader>>());
@@ -124,10 +122,8 @@ namespace DynamicBandwidth
         {
             var messageHeaders = _redisProvider.RedisCollection<MessageHeader>();
 
-            foreach (var dataType in Enum.GetNames(typeof(DataType)))
+            foreach (var dataType in _config.DataTypes)
             {
-                if (dataType.Equals(DataType.None.ToString())) continue;
-
                 foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
                 {
                     var currMessagePriority = (int)(MessagePriority)priority;
@@ -168,7 +164,7 @@ namespace DynamicBandwidth
 
         private void ParseConfig()
         {
-            _remainderPriorities = new SortedList<double, DataType>();
+            _remainderPriorities = new SortedList<double, string>();
             foreach (var chunkConfig in _config.ChunksConfiguration)
             {
                 _remainderPriorities.Add(chunkConfig.Value.RemainderPriority, chunkConfig.Key);
