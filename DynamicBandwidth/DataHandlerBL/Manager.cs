@@ -19,13 +19,15 @@ namespace DataHandlerBL
         IConnectionMultiplexer _connectMulti;
         RedisConnectionProvider _redisProvider;
         IConfiguration _config;
-        public  Manager(ILogger logger, RedisMessageUtility utility , RedisConnectionProvider redisProvider, IConnectionMultiplexer connectMulti,IConfiguration config) 
+        public  Manager(ILogger<Manager> logger, RedisMessageUtility utility , RedisConnectionProvider redisProvider,IConfiguration config) 
         {
             _logger = logger;
             _utility = utility;
-            _connectMulti = connectMulti;
             _redisProvider = redisProvider;
             _config = config;
+
+            string redisConnectionString = config.GetConnectionString("REDIS_MULTIPLEXER_CONNECTION");
+            _connectMulti = ConnectionMultiplexer.Connect(redisConnectionString);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -49,15 +51,14 @@ namespace DataHandlerBL
 
                     await subscriber.SubscribeAsync(channel, (channel, data) =>
                     {
-                        (Message, MessageHeader) messageCreated = _utility.CreateNewMessage(data,MessagePriority.Normal);
+                        (Message, MessageHeader) messageCreated = _utility.CreateNewMessage(data,MessagePriority.Normal,DataType.Track);
                         List<Message> messages = new List<Message>();
                         messages.Add(messageCreated.Item1);
                         List<MessageHeader> messageHeaders = new List<MessageHeader>();
                         messageHeaders.Add(messageCreated.Item2);
                         _utility.SaveMessage((RedisCollection<Message>)_redisProvider.RedisCollection<Message>(),
                             (RedisCollection<MessageHeader>)_redisProvider.RedisCollection<MessageHeader>(),
-                            messages, messageHeaders
-                            );
+                            messages, messageHeaders, 60, 60);
 
                         _logger.LogInformation($"Received message");
                     });
