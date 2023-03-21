@@ -27,8 +27,6 @@ namespace DynamicBandwidth
 
         private Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>> _dataStorage;
 
-        private Dictionary<string, int> _chunkStatistics;
-
         private long _lastScanTimeStamp = 0;
         private long _currScanTimeStamp = 0;
 
@@ -39,6 +37,7 @@ namespace DynamicBandwidth
             _redisProvider         = new RedisConnectionProvider($"redis://{_config.RedisConnectionString}");
             
             _connectionMultiplexer = ConnectionMultiplexer.Connect(_config.RedisConnectionString);
+            
             _redisPublisher = _connectionMultiplexer.GetSubscriber();
 
             var wasCreated = _redisProvider.Connection.CreateIndex(typeof(MessageHeader));
@@ -53,18 +52,11 @@ namespace DynamicBandwidth
 
             _dataStorage = new Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>>();
 
-            _chunkStatistics = new Dictionary<string, int>();
-
             foreach (var dataType in _config.DataTypes)
             {              
                 if (!_dataStorage.ContainsKey(dataType))
                 {
                     _dataStorage.Add(dataType, new Dictionary<MessagePriority, Queue<MessageHeader>>());
-                }
-
-                if (!_chunkStatistics.ContainsKey(dataType))
-                {
-                    _chunkStatistics.Add(dataType, 0);
                 }
 
                 foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
@@ -103,9 +95,11 @@ namespace DynamicBandwidth
                         _logger.LogInformation($"Previous round took {elapsedMilliseconds} milliseconds");
                         _logger.LogInformation($"Start new round at: {now.ToString("HH:mm:ss.fff")}");
 
-                        CleanChunkStatistics();
-
                         FillDataStorage();
+
+                        var chunk = CreateChunk();
+
+                        await SendChunk(chunk);
 
                         //THE END
                         _lastScanTimeStamp = _currScanTimeStamp;
@@ -126,14 +120,6 @@ namespace DynamicBandwidth
                         await Task.Delay(new TimeSpan(_wakeUpPeriod.Ticks - stopwatch.ElapsedTicks));
                     }
                 }
-            }
-        }
-
-        private void CleanChunkStatistics()
-        {
-            foreach (var entry in _chunkStatistics)
-            {
-                _chunkStatistics[entry.Key] = 0;
             }
         }
 
@@ -161,15 +147,26 @@ namespace DynamicBandwidth
             }
         }
 
-        private void SelectMessages()
-        {
+        private Chunk CreateChunk()
+        {            
+            var messgesList = new List<MessageHeader>();
             var totalSizeAccumulator = 0;
 
+            var chunkStatistics = new Dictionary<string, int>();
+            foreach (var dataType in _config.DataTypes)
+            {
+                chunkStatistics[dataType] = 0;
+            }
+
+            var chunk = BuildChunk(messgesList, chunkStatistics, totalSizeAccumulator);
+            return chunk;
         }
 
-        private Chunk BuildChunk(List<MessageHeader> messageHeaders) 
+        private Chunk BuildChunk(List<MessageHeader> messageHeaders, Dictionary<string, int> statistics, int chunkSize) 
         {
             var chunk = new Chunk();
+            chunk.MessagesStatistics = statistics;
+            chunk.Size = chunkSize;
 
             var ids = messageHeaders.Select(header => $"{nameof(Message)}:{header.Id}").ToList();
             chunk.MessagesIds = ids;
