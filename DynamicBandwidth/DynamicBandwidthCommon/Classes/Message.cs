@@ -14,6 +14,8 @@ namespace DynamicBandwidthCommon
         [Indexed]
         public Ulid Id { get; set; }
 
+        public string DataType { get; set; }
+
         public byte[] Data { get; set; }
     }
 }
