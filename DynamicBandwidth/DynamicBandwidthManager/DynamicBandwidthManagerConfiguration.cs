@@ -1,4 +1,5 @@
 ﻿using DynamicBandwidthCommon;
+using System.Net;
 
 namespace DynamicBandwidth
 {
@@ -10,9 +11,11 @@ namespace DynamicBandwidth
 
         public uint PeriodInSec { get; set; }
 
-        public Dictionary<DataType, DataTypeChunkConfiguration> ChunksConfiguration { get; set; }
+        public Dictionary<string, DataTypeChunkConfiguration> ChunksConfiguration { get; set; }
 
         public string ChunkChannelName { get; set; }
+
+        public List<string> DataTypes { get; set; }
     }
 
     public class DataTypeChunkConfiguration

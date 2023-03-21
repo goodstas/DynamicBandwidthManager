@@ -10,19 +10,20 @@ namespace DynamicBandwidthCommon
 {
     public class RedisMessageUtility
     {
-        public (Message, MessageHeader) CreateNewMessage(byte[] data, MessagePriority priority, DataType dataType)
+        public (Message, MessageHeader) CreateNewMessage(byte[] data, MessagePriority priority, string dataType)
         {
             var message = new Message()
             {
-                Id   = Ulid.NewUlid(),
-                Data = data
+                Id       = Ulid.NewUlid(),
+                Data     = data,
+                DataType = dataType
             };
 
             var messageHeader = new MessageHeader()
             {
                 Id        = message.Id,
                 Priority  = (int)priority,
-                DataType  = dataType.ToString(),
+                DataType  = dataType,
                 DataSize  = data.Length,
                 TimeStamp = DateTime.Now.Ticks
             };
