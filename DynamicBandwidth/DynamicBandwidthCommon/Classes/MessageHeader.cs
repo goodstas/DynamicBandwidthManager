@@ -14,12 +14,13 @@ namespace DynamicBandwidthCommon
         [Indexed]
         public Ulid Id { get; set; }
 
+        [Indexed(Aggregatable = true, Sortable = true)]
         public string DataType { get; set; }
 
         public double DataSize { get; set; }
 
         [Indexed(Aggregatable =true, Sortable = true)]
-        public MessagePriority Priority { get; set; }
+        public int Priority { get; set; }
 
         [Indexed(Sortable = true)]
         public long TimeStamp { get; set; }

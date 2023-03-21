@@ -21,7 +21,7 @@ namespace DynamicBandwidthCommon
             var messageHeader = new MessageHeader()
             {
                 Id        = message.Id,
-                Priority  = priority,
+                Priority  = (int)priority,
                 DataType  = dataType.ToString(),
                 DataSize  = data.Length,
                 TimeStamp = DateTime.Now.Ticks
