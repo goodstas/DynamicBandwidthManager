@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHandler", "DataHandler\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHandlerBL", "DataHandlerBL\DataHandlerBL.csproj", "{A2926538-579F-41F9-87FC-330FE68CEA31}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicBandwidthSender", "DynamicBandwidthSender\DynamicBandwidthSender.csproj", "{5CF4FE98-9220-41BA-B1C6-43BEB2D0FD95}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
