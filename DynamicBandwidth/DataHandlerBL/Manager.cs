@@ -51,7 +51,7 @@ namespace DataHandlerBL
 
                     await subscriber.SubscribeAsync(channel, (channel, data) =>
                     {
-                        (Message, MessageHeader) messageCreated = _utility.CreateNewMessage(data,MessagePriority.Normal,DataType.Track);
+                        (Message, MessageHeader) messageCreated = _utility.CreateNewMessage(data,MessagePriority.Normal, channel);
                         List<Message> messages = new List<Message>();
                         messages.Add(messageCreated.Item1);
                         List<MessageHeader> messageHeaders = new List<MessageHeader>();

@@ -7,6 +7,7 @@ using Redis.OM;
 using Redis.OM.Searching;
 using StackExchange.Redis;
 using System.Diagnostics;
+using System.Runtime;
 
 namespace DynamicBandwidth
 {
@@ -16,7 +17,7 @@ namespace DynamicBandwidth
         private readonly TimeSpan                    _wakeUpPeriod;
         private DynamicBandwidthManagerConfiguration _config;
 
-        private SortedList<double, string>           _remainderPriorities;
+        private SortedList<double, string>           _dataTypesPriorities;
 
         private RedisMessageUtility     _redisMessageUtility;
 
@@ -25,7 +26,7 @@ namespace DynamicBandwidth
         private ConnectionMultiplexer   _connectionMultiplexer;
         private ISubscriber             _redisPublisher;
 
-        private Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>> _dataStorage;
+        private Dictionary<string, PriorityQueue<MessageHeader, int>> _dataStorage;
 
         private long _lastScanTimeStamp = 0;
         private long _currScanTimeStamp = 0;
@@ -37,6 +38,7 @@ namespace DynamicBandwidth
             _redisProvider         = new RedisConnectionProvider($"redis://{_config.RedisConnectionString}");
             
             _connectionMultiplexer = ConnectionMultiplexer.Connect(_config.RedisConnectionString);
+            
             _redisPublisher = _connectionMultiplexer.GetSubscriber();
 
             var wasCreated = _redisProvider.Connection.CreateIndex(typeof(MessageHeader));
@@ -49,23 +51,13 @@ namespace DynamicBandwidth
 
             IsEnabled = config.Value.Enabled;
 
-            _dataStorage = new Dictionary<string, Dictionary<MessagePriority, Queue<MessageHeader>>>();
+            _dataStorage = new Dictionary<string, PriorityQueue<MessageHeader, int>>();
 
-            foreach (var dataType in _config.DataTypes)
+            foreach (var dataType in _config.ChunksConfiguration.Keys)
             {              
                 if (!_dataStorage.ContainsKey(dataType))
                 {
-                    _dataStorage.Add(dataType, new Dictionary<MessagePriority, Queue<MessageHeader>>());
-                }
-
-                foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
-                {
-                    if ((MessagePriority)priority == MessagePriority.None) continue;
-
-                    if (!_dataStorage[dataType].ContainsKey((MessagePriority)priority))
-                    {
-                        _dataStorage[dataType].Add((MessagePriority)priority, new Queue<MessageHeader>());
-                    }
+                    _dataStorage.Add(dataType, new PriorityQueue<MessageHeader,int>());
                 }
             }
             
@@ -96,6 +88,10 @@ namespace DynamicBandwidth
 
                         FillDataStorage();
 
+                        var chunk = CreateChunk();
+
+                        await SendChunk(chunk);
+
                         //THE END
                         _lastScanTimeStamp = _currScanTimeStamp;
                     }
@@ -122,35 +118,136 @@ namespace DynamicBandwidth
         {
             var messageHeaders = _redisProvider.RedisCollection<MessageHeader>();
 
-            foreach (var dataType in _config.DataTypes)
+            foreach (var dataType in _config.ChunksConfiguration.Keys)
             {
                 foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
                 {
+                    var messagePriority     = (MessagePriority)priority;
                     var currMessagePriority = (int)(MessagePriority)priority;
-                    if (currMessagePriority == (int)MessagePriority.None) continue;
-
+             
                     var newMessageHeaders = messageHeaders.Where(header => header.DataType == dataType && header.Priority == currMessagePriority &&
                                                                  header.TimeStamp > _lastScanTimeStamp && header.TimeStamp <= _currScanTimeStamp)
                                                           .OrderBy(header => header.TimeStamp).Select(header => header);
-
-                    var numofMessages = newMessageHeaders.ToList<MessageHeader>().Count;
+                                        
                     foreach (var newMessageHeader in newMessageHeaders)
                     {
-                        
+                        _dataStorage[newMessageHeader.DataType].Enqueue(newMessageHeader, currMessagePriority);
                     }
                 }
             }
-
         }
 
-        private Chunk BuildChunk(List<MessageHeader> messageHeaders) 
+        private Chunk CreateChunk()
+        {            
+            var idsList = new List<Ulid>();
+            var totalMessagesSizeAccumulator = 0;
+            var totalMessagesCount           = 0;
+
+            var chunkStatistics = new Dictionary<string, DataStatistics>();
+            foreach (var dataType in _config.ChunksConfiguration.Keys)
+            {
+                chunkStatistics[dataType] = new DataStatistics();
+            }
+
+            var stopSqueezing = false;
+
+            MessageHeader topMessage = null;
+            var topMessagePriority   = 0;
+            var stopWithDataType     = false;
+
+            var leftBytes = 0;
+            var prevLeftBytes = 0;
+
+            bool isRound1 = true;
+
+            var dataTypeSizeLimits = new Dictionary<string, int>();
+
+            foreach (var dataType in _config.ChunksConfiguration.Keys)
+            {
+                dataTypeSizeLimits.Add(dataType, _config.ChunksConfiguration[dataType].SizeInBytes);
+            }
+
+            while (!stopSqueezing)
+            {
+                //we always take messages from the queue with bigger priority
+                foreach (var dataType in _dataTypesPriorities.Values)
+                {
+                    stopWithDataType = false;
+                    
+                    //Because of using PriorityQueue (default ascending order) -> the lowest value gives higher priority
+                    while (!stopWithDataType)
+                    {
+                        if (_dataStorage[dataType].TryPeek(out topMessage, out topMessagePriority))
+                        {
+                            if (topMessage.DataSize + chunkStatistics[dataType].Size > dataTypeSizeLimits[dataType])
+                            {
+                                stopWithDataType = true;
+                            }
+                            else
+                            {
+                                //next message  is already copied to the topMessage that's why we only need to dequeue it
+                                _dataStorage[dataType].Dequeue();
+
+                                idsList.Add(topMessage.Id);
+
+                                //update statistics
+                                chunkStatistics[dataType].Size += topMessage.DataSize;
+                                chunkStatistics[dataType].Count += 1;
+
+                                totalMessagesSizeAccumulator += topMessage.DataSize;
+                                totalMessagesCount += 1;
+                            }
+                        }
+                        else
+                        {
+                            stopWithDataType = true;
+                        }
+                    }
+
+                    //squeezing rounds : recalculate left bytes after squeezing messages from each Data Type queue and update Size Limits
+                    if (!isRound1)
+                    {
+                        leftBytes = CalculateLeftBytes(totalMessagesSizeAccumulator, dataTypeSizeLimits);
+                    }
+                }
+
+                prevLeftBytes = leftBytes;
+                leftBytes     = CalculateLeftBytes(totalMessagesSizeAccumulator, dataTypeSizeLimits);
+
+                if (leftBytes <= 0) stopSqueezing = true;
+
+                if (leftBytes == prevLeftBytes) stopSqueezing = true;
+
+                if(isRound1) isRound1 = false;
+            }
+
+            var chunk = new Chunk()
+            {
+                Size        = totalMessagesSizeAccumulator,
+                Count       = totalMessagesCount,
+                MessagesIds = idsList,
+                MessagesStatistics = chunkStatistics
+            };
+
+            return chunk;
+        }
+
+        private int CalculateLeftBytes(int totalSizeAccumulator, Dictionary<string, int> dataTypeSizeLimits)
         {
-            var chunk = new Chunk();
+            var leftBytes = _config.TotalBytes - totalSizeAccumulator;
 
-            var ids = messageHeaders.Select(header => $"{nameof(Message)}:{header.Id}").ToList();
-            chunk.MessagesIds = ids;
-
-            return  chunk;
+            if (leftBytes < 0)
+            {
+                Console.WriteLine("Configuration Error : the value of summary for sizes of all data types is larger than total bytes number.");
+                return 0;
+            }
+        
+            foreach (var dataType in _config.ChunksConfiguration.Keys)
+            {
+                dataTypeSizeLimits[dataType] = leftBytes;
+            }
+        
+            return leftBytes;
         }
 
         private async Task SendChunk(Chunk chunk)
@@ -164,10 +261,10 @@ namespace DynamicBandwidth
 
         private void ParseConfig()
         {
-            _remainderPriorities = new SortedList<double, string>();
+            _dataTypesPriorities = new SortedList<double, string>();
             foreach (var chunkConfig in _config.ChunksConfiguration)
             {
-                _remainderPriorities.Add(chunkConfig.Value.RemainderPriority, chunkConfig.Key);
+                _dataTypesPriorities.Add(chunkConfig.Value.RemainderPriority, chunkConfig.Key);
             }
         }
 

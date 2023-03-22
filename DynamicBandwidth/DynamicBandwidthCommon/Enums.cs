@@ -11,8 +11,7 @@
 
     public enum MessagePriority : byte
     {
-        None = 0,
-        Normal,
-        High
+        High = 1,
+        Normal
     }
 }
