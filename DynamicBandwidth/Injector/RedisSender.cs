@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Prometheus;
 
 namespace Injector
 {
@@ -22,10 +23,16 @@ namespace Injector
         #region RedisSender Singleton
         private static RedisSender? instance = null;
         private static readonly object Padlock = new object();
+        private Counter recordsProcessed;
 
         private RedisSender()
         {
+            // Prometheus
+            var server = new KestrelMetricServer(port: 8083);
+            server.Start();
 
+            // Generate some sample data from fake business logic.
+            recordsProcessed = Metrics.CreateCounter("sample_records_processed_total", "Total number of records processed.");
         }
 
         public static RedisSender Instance
@@ -43,9 +50,13 @@ namespace Injector
         //open connection with redis
         public void OpenConnection(string address)
         {
-            Connection = StackExchange.Redis.ConnectionMultiplexer.Connect(address);
-            RedisDB = Connection.GetDatabase();
-            stopSending = false;
+            //Redis
+            //Connection = StackExchange.Redis.ConnectionMultiplexer.Connect(address);
+            //RedisDB = Connection.GetDatabase();
+            //stopSending = false;
+
+
+
         }
 
         //periodically send data as loaded from injection file
@@ -61,7 +72,7 @@ namespace Injector
         //send 1 second injection data
         public void SendOneSecondInjection()
         {
-            var subscriber = Connection.GetSubscriber();
+            //var subscriber = Connection.GetSubscriber();
             //for each data type
             for (int i = 0; i < InjectionManager.Instance.DataTypeAmount; i++)
             {
@@ -74,9 +85,13 @@ namespace Injector
                     var data = new byte[injection.MessageSize];
                     var message = new Message(guid, DateTime.UtcNow, data);
                     var json = JsonSerializer.Serialize(message);
-                    subscriber.Publish(injection.Channel, json);
+                    //subscriber.Publish(injection.Channel, json);
                 }
             }
+
+            recordsProcessed.Inc();
+
+
         }
 
         //stop sending data
