@@ -8,8 +8,16 @@ namespace DynamicBandwidthCommon.Classes
 {
     public class Chunk
     {
-        public int Size { get; set; }
-        public Dictionary<string, int> MessagesStatistics { get; set; } = new Dictionary<string, int>();
+        public int Count { get; set; }
+        public int Size { get; set; } = 0;
+        public Dictionary<string, DataStatistics> MessagesStatistics { get; set; } = new Dictionary<string, DataStatistics>();
         public List<string> MessagesIds { get; set; } = new List<string>();
+    }
+
+    public class DataStatistics
+    {
+        public int Count { get; set; } = 0;
+
+        public int Size { get; set; } = 0;
     }
 }
