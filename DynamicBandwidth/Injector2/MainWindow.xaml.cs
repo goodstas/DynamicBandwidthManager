@@ -57,7 +57,6 @@ namespace Injector
         private void StartInjectionChecked(object sender, RoutedEventArgs e)
         {
             startInjection.Content = "Stop Injection";
-            sendOneSecondLoop.IsEnabled = false;
             RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress);
             Task.Factory.StartNew(() => { RedisSender.Instance.PeriodicSendThread(); });
         }
@@ -66,7 +65,6 @@ namespace Injector
         private void StartInjectionUnchecked(object sender, RoutedEventArgs e)
         {
             startInjection.Content = "Start Injection";
-            sendOneSecondLoop.IsEnabled = true;
             RedisSender.Instance.StopSending();
         }
     }

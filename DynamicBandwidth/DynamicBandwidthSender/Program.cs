@@ -1,5 +1,3 @@
-using DynamicBandwidthCommon;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,8 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// add logging service
 builder.Services.AddLogging();
-builder.Services.AddSingleton<RedisMessageUtility>();
+
+// register sender service
 builder.Services.AddSingleton<DynamicBandwidthSender.DynamicBandwidthSender>();
 builder.Services.AddHostedService<DynamicBandwidthSender.DynamicBandwidthSender>();
 
@@ -22,33 +22,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
-//var summaries = new[]
-//{
-//    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-//};
-
-//app.MapGet("/weatherforecast", () =>
-//{
-//    var forecast = Enumerable.Range(1, 5).Select(index =>
-//        new WeatherForecast
-//        (
-//            DateTime.Now.AddDays(index),
-//            Random.Shared.Next(-20, 55),
-//            summaries[Random.Shared.Next(summaries.Length)]
-//        ))
-//        .ToArray();
-//    return forecast;
-//})
-
-app.MapGet("/", () => "Hello from DynamicBandwidthSender!");
-
-//.WithName("GetWeatherForecast");
+app.MapGet("/", () => "Hello from Dynamic Bandwidth Sender!");
 
 app.Run();
-
-//internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-//{
-//    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-//}
