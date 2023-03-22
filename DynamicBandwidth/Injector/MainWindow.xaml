@@ -23,9 +23,11 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Button Grid.Row="0" Grid.Column="0" x:Name="selectInjection" Content="Select Injection" Margin="10 5" Click="SelectInjectionClick"/>
-                <ToggleButton Grid.Row="0" Grid.Column="1" x:Name="startInjection" Content="Start Injection" Margin="10 5" 
+                <Button Grid.Row="0" Grid.Column="1" x:Name="sendOneSecondLoop" Content="Send One Second Loop" Margin="10 5" Click="SendOneSecondLoopClick"/>
+                <ToggleButton Grid.Row="0" Grid.Column="2" x:Name="startInjection" Content="Start Injection" Margin="10 5" 
                               Checked="StartInjectionChecked" Unchecked="StartInjectionUnchecked"/>
             </Grid>
         </Border>
