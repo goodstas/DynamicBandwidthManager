@@ -24,8 +24,4 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DynamicBandwidthCommon\DynamicBandwidthCommon.csproj" />
-  </ItemGroup>
-
 </Project>
