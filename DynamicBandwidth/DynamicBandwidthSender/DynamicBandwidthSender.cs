@@ -1,4 +1,6 @@
 using DynamicBandwidthCommon;
+using DynamicBandwidthCommon.Classes;
+using Prometheus;
 using Redis.OM;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -41,14 +43,18 @@ public class DynamicBandwidthSender : BackgroundService
 
     private async void SendMessages(RedisChannel channel, RedisValue json)
     {
-        var ids = JsonSerializer.Deserialize<string[]>(json);
-        if (ids == null) return;
+        var chunk = JsonSerializer.Deserialize<Chunk>(json);
+        if (chunk == null) return;
+
+        var ids = chunk.MessagesIds.Select(id => $"{nameof(Message)}:{id}");
 
         var messages = await _provider.RedisCollection<Message>().FindByIdsAsync(ids);
 
         foreach (var message in messages)
             if (message.Value != null)
-                _logger.Log(LogLevel.Debug, $"Send message: {message.Value.DataType}");
+                _logger.Log(LogLevel.Debug, $"Send message: {message.Value.DataType}, Size: {message.Value.Data.Length} bytes");
+
         // create metrics and view in grafana
+
     }
 }
