@@ -1,4 +1,5 @@
-﻿using StackExchange.Redis;
+﻿using DynamicBandwidthCommon.Classes;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,8 +72,8 @@ namespace Injector
                 {
                     //send message
                     var data = new byte[injection.MessageSize];
-                    var json = JsonSerializer.Serialize(data);
-                    subscriber.Publish(injection.Channel, json);
+     
+                    subscriber.Publish(injection.Channel, data);
                 }
             }
         }

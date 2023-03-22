@@ -119,20 +119,14 @@ namespace DynamicBandwidth
             var messageHeaders = _redisProvider.RedisCollection<MessageHeader>();
 
             foreach (var dataType in _config.ChunksConfiguration.Keys)
-            {
-                foreach (var priority in Enum.GetValues(typeof(MessagePriority)))
-                {
-                    var messagePriority     = (MessagePriority)priority;
-                    var currMessagePriority = (int)(MessagePriority)priority;
-             
-                    var newMessageHeaders = messageHeaders.Where(header => header.DataType == dataType && header.Priority == currMessagePriority &&
-                                                                 header.TimeStamp > _lastScanTimeStamp && header.TimeStamp <= _currScanTimeStamp)
-                                                          .OrderBy(header => header.TimeStamp).Select(header => header);
+            {    
+                var newMessageHeaders = messageHeaders.Where(header => header.DataType == dataType  &&
+                                                             header.TimeStamp > _lastScanTimeStamp && header.TimeStamp <= _currScanTimeStamp)
+                                                            .OrderBy(header => header.TimeStamp).Select(header => header);
                                         
-                    foreach (var newMessageHeader in newMessageHeaders)
-                    {
-                        _dataStorage[newMessageHeader.DataType].Enqueue(newMessageHeader, currMessagePriority);
-                    }
+                foreach (var newMessageHeader in newMessageHeaders)
+                {
+                    _dataStorage[newMessageHeader.DataType].Enqueue(newMessageHeader, newMessageHeader.Priority);
                 }
             }
         }
@@ -179,7 +173,10 @@ namespace DynamicBandwidth
                     {
                         if (_dataStorage[dataType].TryPeek(out topMessage, out topMessagePriority))
                         {
-                            if (topMessage.DataSize + chunkStatistics[dataType].Size > dataTypeSizeLimits[dataType])
+                            bool overLimit = isRound1 ? topMessage.DataSize + chunkStatistics[dataType].Size > dataTypeSizeLimits[dataType] :
+                                                        topMessage.DataSize > dataTypeSizeLimits[dataType];
+
+                            if (overLimit)
                             {
                                 stopWithDataType = true;
                             }
@@ -196,6 +193,10 @@ namespace DynamicBandwidth
 
                                 totalMessagesSizeAccumulator += topMessage.DataSize;
                                 totalMessagesCount += 1;
+
+                                //In squeezing rounds , reduce DataType limit each time when we take next message of this type
+                                if(!isRound1)
+                                    dataTypeSizeLimits[dataType] -= topMessage.DataSize;
                             }
                         }
                         else
@@ -229,7 +230,35 @@ namespace DynamicBandwidth
                 MessagesStatistics = chunkStatistics
             };
 
+            #region Debug
+            //try
+            //{
+            //    idsList.ForEach(id => MessagesIds.Add(id));
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogCritical("You sent the same message twice");
+            //}
+
+            //Print(chunk);
+            #endregion
+
+
             return chunk;
+        }
+
+        private HashSet<Ulid> MessagesIds = new HashSet<Ulid>();
+
+        private void Print(Chunk chunk)
+        {
+            _logger.LogInformation($"=======Chunk========");
+            _logger.LogInformation($"Total messages count : {chunk.Count}");
+            _logger.LogInformation($"Total messages count : {chunk.Size}");
+
+            foreach (var dataType in chunk.MessagesStatistics.Keys)
+            {
+                _logger.LogInformation($"{dataType}: Size={chunk.MessagesStatistics[dataType].Size}, Count={chunk.MessagesStatistics[dataType].Count}");
+            }
         }
 
         private int CalculateLeftBytes(int totalSizeAccumulator, Dictionary<string, int> dataTypeSizeLimits)
