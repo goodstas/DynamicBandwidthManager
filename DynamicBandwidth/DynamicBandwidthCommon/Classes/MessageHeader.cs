@@ -17,6 +17,7 @@ namespace DynamicBandwidthCommon
         [Indexed(Aggregatable = true, Sortable = true)]
         public string DataType { get; set; }
 
+        [Indexed(Aggregatable = true, Sortable = true)]
         public int DataSize { get; set; }
 
         [Indexed(Aggregatable =true, Sortable = true)]
