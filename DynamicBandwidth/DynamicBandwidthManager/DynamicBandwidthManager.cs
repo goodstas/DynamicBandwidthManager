@@ -92,7 +92,7 @@ namespace DynamicBandwidth
 
                         await SendChunk(chunk);
 
-                        //THE END
+                        //END OF THE ROUND
                         _lastScanTimeStamp = _currScanTimeStamp;
                     }
                 }
@@ -238,7 +238,7 @@ namespace DynamicBandwidth
 
             if (leftBytes < 0)
             {
-                Console.WriteLine("Configuration Error : the value of summary for sizes of all data types is larger than total bytes number.");
+                Console.WriteLine("Configuration Error : the value of summ for sizes of all data types is larger than total bytes number.");
                 return 0;
             }
         

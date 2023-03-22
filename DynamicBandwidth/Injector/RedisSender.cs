@@ -16,7 +16,7 @@ namespace Injector
         bool stopSending = false;
         StackExchange.Redis.ConnectionMultiplexer Connection;
         StackExchange.Redis.IDatabase RedisDB;
-        sealed record Message(byte[] Data);
+        sealed record Message(Guid Id, DateTime CreatedOnUtc, byte[] Data);
 
         //singleton for RedisSender
         #region RedisSender Singleton
@@ -70,10 +70,11 @@ namespace Injector
                 for (int j = 0; j < injection.MessagesPerSecond; j++)
                 {
                     //send message
+                    var guid = Guid.NewGuid();
                     var data = new byte[injection.MessageSize];
-                    //var message = new Message(data);
-                    //var json = JsonSerializer.Serialize(message);
-                    subscriber.Publish(injection.Channel, data);
+                    var message = new Message(guid, DateTime.UtcNow, data);
+                    var json = JsonSerializer.Serialize(message);
+                    subscriber.Publish(injection.Channel, json);
                 }
             }
         }
