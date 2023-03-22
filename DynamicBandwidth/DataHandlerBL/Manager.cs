@@ -18,22 +18,32 @@ namespace DataHandlerBL
         ILogger _logger;
         IConnectionMultiplexer _connectMulti;
         RedisConnectionProvider _redisProvider;
-        IConfiguration _config;
-        public  Manager(ILogger<Manager> logger, RedisMessageUtility utility , RedisConnectionProvider redisProvider,IConfiguration config) 
+        DataHandlerConfig _config;
+
+     
+        public  Manager(ILogger<Manager> logger, RedisMessageUtility utility , RedisConnectionProvider redisProvider,DataHandlerConfig config) 
         {
             _logger = logger;
             _utility = utility;
             _redisProvider = redisProvider;
             _config = config;
-
-            string redisConnectionString = config.GetConnectionString("REDIS_MULTIPLEXER_CONNECTION");
-            _connectMulti = ConnectionMultiplexer.Connect(redisConnectionString);
+            _connectMulti = ConnectionMultiplexer.Connect(_config.RedisConnectionMultiplexer);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var stopwatch = new Stopwatch();
 
+            string channelName = string.Empty;
+       
+            foreach (Channel channel in _config.Channels)
+            {
+                if (channel.ChannelID == _config.RunningChannelID)
+                {
+                    channelName = channel.ChannelName;
+                }
+
+            }
             var sleepPeriod = 1000;
             long elapsedMilliseconds = 0;
             while (!stoppingToken.IsCancellationRequested)
@@ -47,9 +57,8 @@ namespace DataHandlerBL
                     _logger.LogInformation($"Start new round at: {DateTime.Now.ToString("HH:mm:ss.fff")}");
                    
                     ISubscriber subscriber = _connectMulti.GetSubscriber();
-                    string channel = _config.GetValue(typeof(string), "CHANNEL").ToString();
-
-                    await subscriber.SubscribeAsync(channel, (channel, data) =>
+                  
+                    await subscriber.SubscribeAsync(channelName, (channel, data) =>
                     {
                         (Message, MessageHeader) messageCreated = _utility.CreateNewMessage(data,MessagePriority.Normal, channel);
                         List<Message> messages = new List<Message>();

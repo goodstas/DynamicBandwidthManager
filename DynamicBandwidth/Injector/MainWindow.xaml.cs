@@ -26,6 +26,7 @@ namespace Injector
         {
             InitializeComponent();
             startInjection.IsEnabled = false;
+            sendOneSecondLoop.IsEnabled = false;
         }
 
         //read new injection file
@@ -41,14 +42,22 @@ namespace Injector
                 //create new injection list
                 Task.Factory.StartNew(() => { InjectionManager.Instance.ReadNewInjectionFile(path, injectionsDataGrid); });
                 startInjection.IsEnabled = true;
+                sendOneSecondLoop.IsEnabled = true;
             }
+        }
+
+        //read new injection file
+        private void SendOneSecondLoopClick(object sender, RoutedEventArgs e)
+        {
+            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress);
+            Task.Factory.StartNew(() => { RedisSender.Instance.SendOneSecondInjection(); });
         }
 
         //start injecting
         private void StartInjectionChecked(object sender, RoutedEventArgs e)
         {
             startInjection.Content = "Stop Injection";
-            RedisSender.Instance.OpenConnection(InjectionManager.Instance.ReditAddress);
+            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress);
             Task.Factory.StartNew(() => { RedisSender.Instance.PeriodicSendThread(); });
         }
 

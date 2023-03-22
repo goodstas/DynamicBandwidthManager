@@ -17,7 +17,7 @@ namespace Injector
     class InjectionManager
     {
         //parameters
-        public string ReditAddress { get; set; }
+        public string RedisAddress { get; set; }
         public int DataTypeAmount { get; set; }
         List<Injection> injectionList = new List<Injection>();
 
@@ -48,7 +48,7 @@ namespace Injector
         {
             injectionList.Clear();
             IniFile iniFile = new IniFile(path);
-            ReditAddress = iniFile.Read("RedisAddress", "General");
+            RedisAddress = iniFile.Read("RedisAddress", "General");
             DataTypeAmount = int.Parse(iniFile.Read("DataTypeAmount", "General"));
             for(int i = 1; i <= DataTypeAmount; i++)
             {
@@ -61,6 +61,7 @@ namespace Injector
             //update gui
             injectionDataGrid.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
             {
+                injectionDataGrid.ItemsSource = null;
                 injectionDataGrid.ItemsSource = injectionList;
             }));
         }

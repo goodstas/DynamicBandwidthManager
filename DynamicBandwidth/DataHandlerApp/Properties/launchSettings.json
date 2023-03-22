@@ -2,6 +2,7 @@
   "profiles": {
     "DataHandlerApp": {
       "commandName": "Project",
+      "commandLineArgs": "1",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
