@@ -11,7 +11,7 @@ namespace DynamicBandwidthCommon.Classes
         public int Count { get; set; }
         public int Size { get; set; } = 0;
         public Dictionary<string, DataStatistics> MessagesStatistics { get; set; } = new Dictionary<string, DataStatistics>();
-        public List<string> MessagesIds { get; set; } = new List<string>();
+        public List<Ulid> MessagesIds { get; set; } = new List<Ulid>();
     }
 
     public class DataStatistics

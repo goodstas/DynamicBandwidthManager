@@ -139,9 +139,9 @@ namespace DynamicBandwidth
 
         private Chunk CreateChunk()
         {            
-            var messgesList = new List<MessageHeader>();
-            var totalSizeAccumulator = 0;
-            var totalCount = 0;
+            var idsList = new List<Ulid>();
+            var totalMessagesSizeAccumulator = 0;
+            var totalMessagesCount           = 0;
 
             var chunkStatistics = new Dictionary<string, DataStatistics>();
             foreach (var dataType in _config.ChunksConfiguration.Keys)
@@ -152,7 +152,7 @@ namespace DynamicBandwidth
             var stopSqueezing = false;
 
             MessageHeader topMessage = null;
-            int topMessagePriority   = 0;
+            var topMessagePriority   = 0;
             var stopWithDataType     = false;
 
             var leftBytes = 0;
@@ -188,12 +188,14 @@ namespace DynamicBandwidth
                                 //next message  is already copied to the topMessage that's why we only need to dequeue it
                                 _dataStorage[dataType].Dequeue();
 
+                                idsList.Add(topMessage.Id);
+
                                 //update statistics
                                 chunkStatistics[dataType].Size += topMessage.DataSize;
                                 chunkStatistics[dataType].Count += 1;
 
-                                totalSizeAccumulator += topMessage.DataSize;
-                                totalCount += 1;
+                                totalMessagesSizeAccumulator += topMessage.DataSize;
+                                totalMessagesCount += 1;
                             }
                         }
                         else
@@ -205,12 +207,12 @@ namespace DynamicBandwidth
                     //squeezing rounds : recalculate left bytes after squeezing messages from each Data Type queue and update Size Limits
                     if (!isRound1)
                     {
-                        leftBytes = CalculateLeftBytes(totalSizeAccumulator, dataTypeSizeLimits);
+                        leftBytes = CalculateLeftBytes(totalMessagesSizeAccumulator, dataTypeSizeLimits);
                     }
                 }
 
                 prevLeftBytes = leftBytes;
-                leftBytes     = CalculateLeftBytes(totalSizeAccumulator, dataTypeSizeLimits);
+                leftBytes     = CalculateLeftBytes(totalMessagesSizeAccumulator, dataTypeSizeLimits);
 
                 if (leftBytes <= 0) stopSqueezing = true;
 
@@ -218,8 +220,15 @@ namespace DynamicBandwidth
 
                 if(isRound1) isRound1 = false;
             }
-            
-            var chunk = BuildChunk(messgesList, chunkStatistics, totalSizeAccumulator, totalCount);
+
+            var chunk = new Chunk()
+            {
+                Size        = totalMessagesSizeAccumulator,
+                Count       = totalMessagesCount,
+                MessagesIds = idsList,
+                MessagesStatistics = chunkStatistics
+            };
+
             return chunk;
         }
 
@@ -239,19 +248,6 @@ namespace DynamicBandwidth
             }
         
             return leftBytes;
-        }
-
-        private Chunk BuildChunk(List<MessageHeader> messageHeaders, Dictionary<string, DataStatistics> statistics, int totalMessageSize, int totalMessageCount)
-        {
-            var chunk = new Chunk()
-            {                
-                Size  = totalMessageSize,
-                Count = totalMessageCount,
-                MessagesIds        = messageHeaders.Select(header => $"{nameof(Message)}:{header.Id}").ToList(),
-                MessagesStatistics = statistics
-            };
-
-            return  chunk;
         }
 
         private async Task SendChunk(Chunk chunk)
