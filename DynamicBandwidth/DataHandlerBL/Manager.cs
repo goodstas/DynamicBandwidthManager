@@ -46,8 +46,8 @@ namespace DataHandlerBL
             }
             var sleepPeriod = 1000;
             long elapsedMilliseconds = 0;
-            while (!stoppingToken.IsCancellationRequested)
-            {
+            //while (!stoppingToken.IsCancellationRequested)
+            //{
                 stopwatch.Restart();
                 try
                 {
@@ -88,7 +88,7 @@ namespace DataHandlerBL
                         await Task.Delay(new TimeSpan(sleepPeriod - stopwatch.ElapsedTicks));
                     }
                 }
-            }
+            
         }
 
     }
