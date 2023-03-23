@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DynamicBandwidthCommon;
 using DynamicBandwidthCommon.Classes;
+using Microsoft.Extensions.Options;
 using Prometheus;
 using Redis.OM;
 using StackExchange.Redis;
@@ -11,12 +12,12 @@ public class DynamicBandwidthSender : BackgroundService
 {
     #region Constructor
 
-    public DynamicBandwidthSender(ILogger<DynamicBandwidthSender> logger, IConfiguration config)
+    public DynamicBandwidthSender(ILogger<DynamicBandwidthSender> logger, IOptions<DynamicBandwidthSenderConfiguration> config)
     {
         _logger = logger;
 
         // get connection string for Redis
-        var connectionString = config.GetConnectionString("REDIS_CONNECTION_STRING");
+        var connectionString = config.Value.RedisConnectionString;
         try
         {
             // connect to Redis
@@ -30,8 +31,15 @@ public class DynamicBandwidthSender : BackgroundService
         // initialize redis provider
         _provider = new($"redis://{connectionString}");
 
+        // set chunk channel name
+        _chunkChannel = config.Value.ChunkChannelName;
+
+        if (config.Value.DataTypes == null) return;
+
         // initialize metrics
-        foreach (var dataType in DataTypes) MessageMetrics.Add(dataType, new(dataType));
+        foreach (var dataType in config.Value.DataTypes)
+            MessageMetrics.Add(dataType.Replace(" ",""), new(dataType));
+
     }
 
     #endregion
@@ -41,6 +49,8 @@ public class DynamicBandwidthSender : BackgroundService
     // a class to hold Messages Metrics for Prometheus
     private class MessageMetric
     {
+        private static int count = 0;
+
         #region Fields
         // number of messages of current type in current chunk
         private readonly Gauge _count;
@@ -56,6 +66,8 @@ public class DynamicBandwidthSender : BackgroundService
         {
             _size = Metrics.CreateGauge("total_messages_size", "Number of bytes that has been sent");
             _count = Metrics.CreateGauge("total_messages_count", "Number of messages that has been sent");
+
+            _size.Set(10);
         } 
 
         //constructor for specific Data Type
@@ -66,6 +78,8 @@ public class DynamicBandwidthSender : BackgroundService
                 $"Number of bytes that has been sent for type {Type}");
             _count = Metrics.CreateGauge($"{lower}_messages_count",
                 $"Number of messages that has been sent for type {Type}");
+
+            _size.Set(++count);
         }
         #endregion
 
@@ -89,15 +103,12 @@ public class DynamicBandwidthSender : BackgroundService
 
     #region Fields
 
-    //types of messages
-    private static readonly string[] DataTypes = {"Track", "Plot", "Sensor Status", "Mission Status"};
-
     // metrics to display with Prometheus and Grafana
     private static readonly MessageMetric Total = new();
     private static readonly Dictionary<string, MessageMetric> MessageMetrics = new();
 
     // channel to subscribe to Redis in order to get chunks
-    private const string ChunkChannel = "chunk-channel";
+    private readonly string? _chunkChannel;
 
     // connection handler to Redis
     private static ConnectionMultiplexer? _connection;
@@ -131,7 +142,7 @@ public class DynamicBandwidthSender : BackgroundService
         {
             // subscribe to Redis for getting chunks
             _subscriber = _connection.GetSubscriber();
-            await _subscriber.SubscribeAsync(ChunkChannel, SendMessages);
+            await _subscriber.SubscribeAsync(_chunkChannel, SendMessages);
         }
     }
 
@@ -146,7 +157,7 @@ public class DynamicBandwidthSender : BackgroundService
         if (_cancel.IsCancellationRequested)
         {
             // unsubscribe from Redis
-            if (_subscriber != null) await _subscriber.UnsubscribeAsync(ChunkChannel);
+            if (_subscriber != null) await _subscriber.UnsubscribeAsync(_chunkChannel);
             return;
         }
 
@@ -166,8 +177,12 @@ public class DynamicBandwidthSender : BackgroundService
 
         // set metrics
         Total.Set(chunk.Count, chunk.Size);
-        foreach (var dataType in chunk.MessagesStatistics.Keys.Where(dataType => MessageMetrics.ContainsKey(dataType)))
-            MessageMetrics[dataType].Set(chunk.MessagesStatistics[dataType]);
+        foreach (var dataType in chunk.MessagesStatistics.Keys)
+        {
+            var type = dataType.Replace(" ", "");
+            if (MessageMetrics.ContainsKey(type)) 
+                MessageMetrics[type].Set(chunk.MessagesStatistics[dataType]);
+        }
     }
 
     #endregion
