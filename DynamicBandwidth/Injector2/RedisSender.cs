@@ -1,5 +1,4 @@
-﻿
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Prometheus;
 
 namespace Injector
 {
@@ -18,7 +16,7 @@ namespace Injector
         bool stopSending = false;
         StackExchange.Redis.ConnectionMultiplexer Connection;
         StackExchange.Redis.IDatabase RedisDB;
-        sealed record Message(byte[] Data);
+        sealed record Message(Guid Id, DateTime CreatedOnUtc, byte[] Data);
 
         //singleton for RedisSender
         #region RedisSender Singleton
@@ -74,13 +72,11 @@ namespace Injector
                     //send message
                     var guid = Guid.NewGuid();
                     var data = new byte[injection.MessageSize];
-                    subscriber.Publish(injection.Channel, data);
+                    var message = new Message(guid, DateTime.UtcNow, data);
+                    var json = JsonSerializer.Serialize(message);
+                    subscriber.Publish(injection.Channel, json);
                 }
             }
-
-            //recordsProcessed.Inc();
-
-
         }
 
         //stop sending data
