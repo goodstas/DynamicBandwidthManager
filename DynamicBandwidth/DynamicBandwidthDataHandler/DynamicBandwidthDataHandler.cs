@@ -26,11 +26,11 @@ namespace DataHandlerBL
 
         private DynamicBandwidthDataHandlerConfiguration _config;
 
-        private string[] _commandArgs;
+        private string _channelsList;
 
         public DynamicBandwidthDataHandlerService(IOptions<DynamicBandwidthDataHandlerCommandArgs> args, ILogger<DynamicBandwidthDataHandlerService> logger, RedisMessageUtility utility , IOptions<DynamicBandwidthDataHandlerConfiguration> config) 
         {
-            _commandArgs = args.Value.CommandArgs;
+            _channelsList = args.Value.ChannelsList;
 
             _logger              = logger;
             _redisMessageUtility = utility;
@@ -87,9 +87,9 @@ namespace DataHandlerBL
         {
             var channels = new List<string>();
 
-            if (_commandArgs != null && _commandArgs.Length > 0)
+            if (!string.IsNullOrEmpty(_channelsList))
             {
-                var currChannels = _commandArgs[0].Split(" ");
+                var currChannels = _channelsList.Split(" ");
                 foreach (var channel in currChannels)
                 {
                     if(_config.Channels.Contains(channel))

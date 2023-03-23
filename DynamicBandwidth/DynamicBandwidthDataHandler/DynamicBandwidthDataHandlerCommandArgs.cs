@@ -4,6 +4,6 @@ namespace DynamicBandwidthDataHandler
 {
     public class DynamicBandwidthDataHandlerCommandArgs
     {
-        public string[] CommandArgs { get; set; }
+        public string ChannelsList { get; set; }
     }
 }
