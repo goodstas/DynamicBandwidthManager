@@ -21,6 +21,9 @@ namespace Injector
         ConnectionMultiplexer Connection;
         IDatabase RedisDB;
         sealed record Message(byte[] Data);
+        //prometheus parameters
+        private static readonly MessageMetric Total = new("injector");
+        private static readonly Dictionary<string, MessageMetric> MessageMetrics = new();
 
         //singleton for RedisSender
         #region RedisSender Singleton
@@ -54,6 +57,11 @@ namespace Injector
             //prometheus connection
             var server = new KestrelMetricServer(port: prometheusPort);
             server.Start();
+            //initialize metrics
+            foreach (var dataType in InjectionManager.Instance.GetAllDataTypes())
+            {
+                MessageMetrics.Add(dataType, new("injector", dataType));
+            }
         }
 
         //periodically send data as loaded from injection file
@@ -71,6 +79,7 @@ namespace Injector
         {
             var subscriber = Connection.GetSubscriber();
             int totalData = 0;
+            int totalMessages = 0;
             //for each data type
             for (int i = 0; i < InjectionManager.Instance.DataTypeAmount; i++)
             {
@@ -90,11 +99,12 @@ namespace Injector
                     totalTypeData += dataSizeToSend;
                 }
                 //send data to prometheus
-                SendDataToPrometheus(totalTypeData, injection.Channel);
+                SendDataToPrometheus(totalTypeData, injection.MessagesPerSecond, injection.Channel);
                 totalData += totalTypeData;
+                totalMessages += injection.MessagesPerSecond;
             }
             //send total data to prometheus
-            SendDataToPrometheus(totalData);
+            SendDataToPrometheus(totalData, totalMessages);
         }
 
         //stop sending data
@@ -105,15 +115,18 @@ namespace Injector
         }
 
         //send injection data to prometheus
-        private void SendDataToPrometheus(int dataSize, string type = null)
+        private void SendDataToPrometheus(int dataSize, int messagesSent, string type = null)
         {
             if(type == null)
             {
-
+                Total.Set(messagesSent, dataSize);
             }
             else
             {
-
+                if (MessageMetrics.ContainsKey(type))
+                {
+                    MessageMetrics[type].Set(messagesSent, dataSize);
+                }
             }
         }
     }

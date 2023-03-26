@@ -75,5 +75,16 @@ namespace Injector
         {
             return injectionList[index];
         }
+
+        //get all data types
+        public string[] GetAllDataTypes()
+        {
+            string[] dataTypes = new string[DataTypeAmount];
+            for(int i = 0;i < DataTypeAmount; i++)
+            {
+                dataTypes[i] = injectionList[i].Channel;
+            }
+            return dataTypes;
+        }
     }
 }
