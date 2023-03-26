@@ -25,9 +25,13 @@ namespace DataHandlerBL
         private ISubscriber             _redisSubscriber;
 
         private DynamicBandwidthDataHandlerConfiguration _config;
-     
-        public DynamicBandwidthDataHandlerService(ILogger<DynamicBandwidthDataHandlerService> logger, RedisMessageUtility utility , IOptions<DynamicBandwidthDataHandlerConfiguration> config) 
+
+        private string _channelsList;
+
+        public DynamicBandwidthDataHandlerService(IOptions<DynamicBandwidthDataHandlerCommandArgs> args, ILogger<DynamicBandwidthDataHandlerService> logger, RedisMessageUtility utility , IOptions<DynamicBandwidthDataHandlerConfiguration> config) 
         {
+            _channelsList = args.Value.ChannelsList;
+
             _logger              = logger;
             _redisMessageUtility = utility;
             _config              = config.Value;
@@ -50,9 +54,13 @@ namespace DataHandlerBL
 
             var messagesCollection       = (RedisCollection<Message>)_redisProvider.RedisCollection<Message>();
             var messageHeadersCollection = (RedisCollection<MessageHeader>)_redisProvider.RedisCollection<MessageHeader>();
-            
-            foreach (var dataType in _config.Channels)
+
+            var channels = ParseCommandArgsAndConfig();
+
+            foreach (var dataType in channels)
             {
+                _logger.LogInformation($"Subsribe to {dataType} channel.");
+
                 _redisSubscriber.Subscribe(dataType, (channel, data) =>
                 {
                     var (message, messageHeader) = _redisMessageUtility.CreateNewMessage(data, MessagePriority.Normal, channel);
@@ -73,6 +81,27 @@ namespace DataHandlerBL
            _logger.LogInformation("Subsription to all channels was completed");
 
            await Task.Delay(Timeout.Infinite);
+        }
+
+        private IEnumerable<string> ParseCommandArgsAndConfig()
+        {
+            var channels = new List<string>();
+
+            if (!string.IsNullOrEmpty(_channelsList))
+            {
+                var currChannels = _channelsList.Split(" ");
+                foreach (var channel in currChannels)
+                {
+                    if(_config.Channels.Contains(channel))
+                        channels.Add(channel);
+                }
+            }
+            else
+            {
+                channels.AddRange(_config.Channels);
+            }
+
+            return channels;
         }
     }
 }
