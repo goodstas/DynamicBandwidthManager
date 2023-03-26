@@ -1,0 +1,29 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "redis-stack"
+  namespace: "default"
+  labels:
+    app: "redis-stack"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "redis-stack"
+  template:
+    metadata:
+      labels:
+        app: "redis-stack"
+    spec:
+      containers:
+      - name: "redis-stack-1"
+        image: "redis/redis-stack:latest"
+        volumeMounts:
+        - name: "redis-data"
+          mountPath: "/data"
+      volumes:
+      - name: "redis-data"
+        persistentVolumeClaim:
+          claimName: redis-pv
+        

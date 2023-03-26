@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: bw-manager-deployment
+  labels:
+    app: bw-manager
+
+spec:
+
+  replicas: 1
+
+  selector:
+
+    matchLabels:
+
+      app: bw-manager
+
+  template:
+
+    metadata:
+
+      labels:
+
+        app: bw-manager
+
+    spec:
+
+      containers:
+
+      - name: bw-manager
+
+        image: me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-manager-image:v1.3.0
+        env:
+          - name: "DynamicBandwidthManagerConfiguration__RedisConnectionString"
+            value: "34.165.78.173:6379"
+
+     

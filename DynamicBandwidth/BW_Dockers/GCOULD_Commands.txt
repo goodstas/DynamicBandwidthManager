@@ -1,0 +1,13 @@
+gcloud artifacts repositories create bw-management-docker-repo --repository-format=docker  --location=me-west1 --description="Bandwidth Management Docker repository"
+
+gcloud builds submit --region=global --tag me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-manager-image:v1.3.0
+
+gcloud builds submit --region=global --tag me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-handler-image:v1.0.0
+
+gcloud builds submit --region=global --tag me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-sender-image:v1.3.0
+
+=====
+kubectl get pod
+kubectl logs <docker_image_tag>
+======
+kubectl apply -f <File_Deploy>.yaml
