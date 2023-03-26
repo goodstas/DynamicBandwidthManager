@@ -28,7 +28,7 @@ builder.Services.AddSingleton(redisProvider);
 
 DataHandlerConfig dataHandlerConfig = builder.Configuration.GetSection("DataHandlerConfig")
                                                 .Get<DataHandlerConfig>();
-
+dataHandlerConfig.RunningChannelID = runningChannelID;
 builder.Services.AddSingleton(dataHandlerConfig);
 
 var app = builder.Build();
