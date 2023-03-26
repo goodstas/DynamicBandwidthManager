@@ -38,65 +38,7 @@ public class DynamicBandwidthSender : BackgroundService
 
         // initialize metrics
         foreach (var dataType in config.Value.DataTypes)
-            MessageMetrics.Add(dataType.Replace(" ",""), new(dataType));
-
-    }
-
-    #endregion
-
-    #region Message Metric
-
-    // a class to hold Messages Metrics for Prometheus
-    private class MessageMetric
-    {
-        private static int count = 0;
-
-        #region Fields
-        // number of messages of current type in current chunk
-        private readonly Gauge _count;
-
-        // total number of bytes sent of current type in current chunk
-        private readonly Gauge _size;
-        #endregion
-
-        #region Constructor
-
-        // default constructor for Total Metric
-        public MessageMetric()
-        {
-            _size = Metrics.CreateGauge("total_messages_size", "Number of bytes that has been sent");
-            _count = Metrics.CreateGauge("total_messages_count", "Number of messages that has been sent");
-
-            _size.Set(10);
-        } 
-
-        //constructor for specific Data Type
-        internal MessageMetric(string Type)
-        {
-            var lower = Type.ToLower().Replace(" ", "_");
-            _size = Metrics.CreateGauge($"{lower}_messages_size",
-                $"Number of bytes that has been sent for type {Type}");
-            _count = Metrics.CreateGauge($"{lower}_messages_count",
-                $"Number of messages that has been sent for type {Type}");
-
-            _size.Set(++count);
-        }
-        #endregion
-
-        #region Methods
-        // set gauges values
-        public void Set(DataStatistics statistics)
-        {
-            _size.Set(statistics.Size);
-            _count.Set(statistics.Count);
-        }
-
-        public void Set(int count, int size)
-        {
-            _size.Set(size);
-            _count.Set(count);
-        } 
-        #endregion
+            MessageMetrics.Add(dataType.Replace(" ", ""), new("sender", dataType));
     }
 
     #endregion
@@ -104,8 +46,9 @@ public class DynamicBandwidthSender : BackgroundService
     #region Fields
 
     // metrics to display with Prometheus and Grafana
-    private static readonly MessageMetric Total = new();
+    private static readonly MessageMetric Total = new("sender");
     private static readonly Dictionary<string, MessageMetric> MessageMetrics = new();
+    private static readonly Gauge ProcessingTime = Metrics.CreateGauge("db_processing_time", "Time of processing next chunk in milliseconds.");
 
     // channel to subscribe to Redis in order to get chunks
     private readonly string? _chunkChannel;
@@ -172,7 +115,7 @@ public class DynamicBandwidthSender : BackgroundService
         // it's a demo - just log messages types and sizes
         foreach (var message in messages)
             if (message.Value != null)
-                _logger.Log(LogLevel.Debug,
+                _logger.Log(LogLevel.Information,
                     $"Send message: {message.Value.DataType}, Size: {message.Value.Data.Length} bytes");
 
         // set metrics
@@ -180,9 +123,11 @@ public class DynamicBandwidthSender : BackgroundService
         foreach (var dataType in chunk.MessagesStatistics.Keys)
         {
             var type = dataType.Replace(" ", "");
-            if (MessageMetrics.ContainsKey(type)) 
+            if (MessageMetrics.ContainsKey(type))
                 MessageMetrics[type].Set(chunk.MessagesStatistics[dataType]);
         }
+
+        ProcessingTime.Set(chunk.ProcessingTimeInMilliSec);
     }
 
     #endregion

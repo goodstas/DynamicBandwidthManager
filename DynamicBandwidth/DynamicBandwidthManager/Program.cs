@@ -4,6 +4,8 @@ using Redis.OM;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 builder.Services
     .AddOptions<DynamicBandwidthManagerConfiguration>()
     .BindConfiguration("DynamicBandwidthManagerConfiguration");

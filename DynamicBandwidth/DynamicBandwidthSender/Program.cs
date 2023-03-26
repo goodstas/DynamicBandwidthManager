@@ -28,6 +28,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+builder.WebHost.UseUrls(builder.Configuration.GetValue<string>("ApplicationUrl"));
 
 app.UseRouting();
 
