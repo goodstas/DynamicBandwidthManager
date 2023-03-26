@@ -49,7 +49,8 @@ namespace Injector
         //read new injection file
         private void SendOneSecondLoopClick(object sender, RoutedEventArgs e)
         {
-            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress);
+            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress,
+                InjectionManager.Instance.PrometheusPort);
             Task.Factory.StartNew(() => { RedisSender.Instance.SendOneSecondInjection(); });
         }
 
@@ -58,7 +59,8 @@ namespace Injector
         {
             startInjection.Content = "Stop Injection";
             sendOneSecondLoop.IsEnabled = false;
-            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress);
+            RedisSender.Instance.OpenConnection(InjectionManager.Instance.RedisAddress,
+                InjectionManager.Instance.PrometheusPort);
             Task.Factory.StartNew(() => { RedisSender.Instance.PeriodicSendThread(); });
         }
 

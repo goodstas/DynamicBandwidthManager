@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Prometheus;
+using DynamicBandwidthCommon;
+using DynamicBandwidthCommon.Classes;
 
 namespace Injector
 {
@@ -43,11 +45,15 @@ namespace Injector
         #endregion
 
         //open connection with redis
-        public void OpenConnection(string address)
+        public void OpenConnection(string address, int prometheusPort)
         {
+            //redis connection
             Connection = StackExchange.Redis.ConnectionMultiplexer.Connect(address);
             RedisDB = Connection.GetDatabase();
             stopSending = false;
+            //prometheus connection
+            using var server = new KestrelMetricServer(port: prometheusPort);
+            server.Start();
         }
 
         //periodically send data as loaded from injection file
@@ -72,10 +78,15 @@ namespace Injector
                 for (int j = 0; j < injection.MessagesPerSecond; j++)
                 {
                     //send message
-                    var guid = Guid.NewGuid();
+                    Random random = new Random();
+                    int deviationPercentage = random.Next(
+                        -1 * InjectionManager.Instance.DataSizeDeviationPrecentage,
+                        InjectionManager.Instance.DataSizeDeviationPrecentage);
                     var data = new byte[injection.MessageSize];
                     subscriber.Publish(injection.Channel, data);
                 }
+                //send data to prometheus
+                SendDataToPrometheus(injection);
             }
 
             //recordsProcessed.Inc();
@@ -88,6 +99,12 @@ namespace Injector
         {
             stopSending = true;
             Thread.Sleep(1000);
+        }
+
+        //send injection data to prometheus
+        private void SendDataToPrometheus(Injection injection)
+        {
+
         }
     }
 }

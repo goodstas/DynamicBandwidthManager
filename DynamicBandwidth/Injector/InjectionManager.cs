@@ -18,7 +18,9 @@ namespace Injector
     {
         //parameters
         public string RedisAddress { get; set; }
+        public int PrometheusPort { get; set; }
         public int DataTypeAmount { get; set; }
+        public int DataSizeDeviationPrecentage { get; set; }
         List<Injection> injectionList = new List<Injection>();
 
         //singleton for InjectionManager
@@ -49,8 +51,10 @@ namespace Injector
             injectionList.Clear();
             IniFile iniFile = new IniFile(path);
             RedisAddress = iniFile.Read("RedisAddress", "General");
+            PrometheusPort = int.Parse(iniFile.Read("PrometheusPort", "General"));
             DataTypeAmount = int.Parse(iniFile.Read("DataTypeAmount", "General"));
-            for(int i = 1; i <= DataTypeAmount; i++)
+            DataSizeDeviationPrecentage = int.Parse(iniFile.Read("DataSizeDeviationPrecentage", "General"));
+            for (int i = 1; i <= DataTypeAmount; i++)
             {
                 Injection injection = new Injection();
                 injection.Channel = iniFile.Read("Channel", "DataType" + i);
