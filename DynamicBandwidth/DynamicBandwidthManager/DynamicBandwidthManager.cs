@@ -70,6 +70,8 @@ namespace DynamicBandwidth
         {
             var stopwatch   = new Stopwatch();
 
+            var processStopWatch = new Stopwatch();
+
             var  sleepPeriod         = _wakeUpPeriod;
             long elapsedMilliseconds = 0;
             while (!stoppingToken.IsCancellationRequested)
@@ -86,9 +88,13 @@ namespace DynamicBandwidth
                         _logger.LogInformation($"Previous round took {elapsedMilliseconds} milliseconds");
                         _logger.LogInformation($"Start new round at: {now.ToString("HH:mm:ss.fff")}");
 
+                        processStopWatch.Restart();
                         FillDataStorage();
 
                         var chunk = CreateChunk();
+
+                        processStopWatch.Stop();
+                        chunk.ProcessingTimeInMilliSec = processStopWatch.ElapsedMilliseconds;
 
                         await SendChunk(chunk);
 
@@ -105,7 +111,7 @@ namespace DynamicBandwidth
                 {
                     stopwatch.Stop();
                     elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-            
+
                     if (stopwatch.ElapsedTicks < _wakeUpPeriod.Ticks)
                     {
                         await Task.Delay(new TimeSpan(_wakeUpPeriod.Ticks - stopwatch.ElapsedTicks));

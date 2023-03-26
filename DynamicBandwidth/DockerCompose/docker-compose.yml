@@ -1,0 +1,59 @@
+version: "3.9"
+services:
+  grafana:
+    container_name: grafana_grafprom
+    user: "472"
+    image: grafana/grafana:master
+    ports:
+      - "5110:3000"
+    volumes:
+      - "${ROOT_DIR}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources"
+      - "${ROOT_DIR}/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards"
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus_grafprom
+    restart: always
+    ports:
+      - 9090:9090
+    volumes:
+      - "${ROOT_DIR}/prometheus:/etc/prometheus"
+      - prometheus-data:/prometheus
+      #- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+  redis:
+    image: "redis/redis-stack:latest"
+    ports:
+      - "6379:6379"
+      - '8001:8001'
+    volumes:
+      - redis-data:/data
+    #bw_manager:
+    # image: "bw-manager:v0.0.2"
+    # network_mode: host
+    #depends_on:
+    # - redis
+  bw_handler_track_plot:
+    image: "bw_handler:v0.0.1"
+    network_mode: host
+    environment:
+      - ApplicationUrl=http://localhost:5642
+      - ChannelsList=Track Plot
+    depends_on:
+      - redis
+  bw_handler_statuses:
+    image: "bw_handler:v0.0.1"
+    network_mode: host
+    environment:
+      - ApplicationUrl=http://localhost:5842
+      - ChannelsList=MissionStatus SensorStatus
+    depends_on:
+      - redis
+volumes:
+  redis-data:
+  prometheus-data:
+    driver: local

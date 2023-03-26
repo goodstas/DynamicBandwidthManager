@@ -1,4 +1,6 @@
-﻿namespace DynamicBandwidthCommon.Classes;
+﻿using Redis.OM.Modeling;
+
+namespace DynamicBandwidthCommon.Classes;
 
 public class Chunk
 {
@@ -14,6 +16,9 @@ public class Chunk
 
     // list of Ids to take from redis
     public List<Ulid> MessagesIds { get; set; } = new();
+
+    [Indexed(Sortable = true)]
+    public long ProcessingTimeInMilliSec { get; set; }
 }
 
 public class DataStatistics
