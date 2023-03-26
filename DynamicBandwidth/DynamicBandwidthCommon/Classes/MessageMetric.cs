@@ -28,7 +28,7 @@ public class MessageMetric
     }
 
     //constructor for specific Data Type
-    internal MessageMetric(string who, string Type)
+    public MessageMetric(string who, string Type)
     {
         _who = who;
 
