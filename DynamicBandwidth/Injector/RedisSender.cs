@@ -18,8 +18,8 @@ namespace Injector
     {
         //parameters
         bool stopSending = false;
-        StackExchange.Redis.ConnectionMultiplexer Connection;
-        StackExchange.Redis.IDatabase RedisDB;
+        ConnectionMultiplexer Connection;
+        IDatabase RedisDB;
         sealed record Message(byte[] Data);
 
         //singleton for RedisSender
@@ -52,7 +52,7 @@ namespace Injector
             RedisDB = Connection.GetDatabase();
             stopSending = false;
             //prometheus connection
-            using var server = new KestrelMetricServer(port: prometheusPort);
+            var server = new KestrelMetricServer(port: prometheusPort);
             server.Start();
         }
 
@@ -70,9 +70,11 @@ namespace Injector
         public void SendOneSecondInjection()
         {
             var subscriber = Connection.GetSubscriber();
+            int totalData = 0;
             //for each data type
             for (int i = 0; i < InjectionManager.Instance.DataTypeAmount; i++)
             {
+                int totalTypeData = 0;
                 Injection injection = InjectionManager.Instance.GetInjection(i);
                 //times message per seconds
                 for (int j = 0; j < injection.MessagesPerSecond; j++)
@@ -82,16 +84,17 @@ namespace Injector
                     int deviationPercentage = random.Next(
                         -1 * InjectionManager.Instance.DataSizeDeviationPrecentage,
                         InjectionManager.Instance.DataSizeDeviationPrecentage);
-                    var data = new byte[injection.MessageSize];
+                    int dataSizeToSend = injection.MessageSize * (100 - deviationPercentage) / 100;
+                    var data = new byte[dataSizeToSend];
                     subscriber.Publish(injection.Channel, data);
+                    totalTypeData += dataSizeToSend;
                 }
                 //send data to prometheus
-                SendDataToPrometheus(injection);
+                SendDataToPrometheus(totalTypeData, injection.Channel);
+                totalData += totalTypeData;
             }
-
-            //recordsProcessed.Inc();
-
-
+            //send total data to prometheus
+            SendDataToPrometheus(totalData);
         }
 
         //stop sending data
@@ -102,9 +105,16 @@ namespace Injector
         }
 
         //send injection data to prometheus
-        private void SendDataToPrometheus(Injection injection)
+        private void SendDataToPrometheus(int dataSize, string type = null)
         {
+            if(type == null)
+            {
 
+            }
+            else
+            {
+
+            }
         }
     }
 }
