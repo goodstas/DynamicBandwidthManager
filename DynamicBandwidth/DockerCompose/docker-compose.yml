@@ -4,14 +4,11 @@ services:
     container_name: grafana_grafprom
     user: "472"
     image: grafana/grafana:master
-    #environment:
-    #  - GF_INSTALL_PLUGINS=michaeldmoore-multistat-panel
     ports:
       - "5110:3000"
     volumes:
       - "${ROOT_DIR}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources"
       - "${ROOT_DIR}/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards"
-   #   - "${ROOT_DIR}/grafana-data:/var/lib/grafana"
     depends_on:
       - prometheus
 
