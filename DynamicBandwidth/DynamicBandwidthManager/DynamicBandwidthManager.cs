@@ -95,8 +95,15 @@ namespace DynamicBandwidth
 
                         processStopWatch.Stop();
                         chunk.ProcessingTimeInMilliSec = processStopWatch.ElapsedMilliseconds;
-
-                        await SendChunk(chunk);
+                                             
+                        if (chunk.Count > 0)
+                        {
+                            await SendChunk(chunk);
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"No data to send.");
+                        }
 
                         //END OF THE ROUND
                         _lastScanTimeStamp = _currScanTimeStamp;
