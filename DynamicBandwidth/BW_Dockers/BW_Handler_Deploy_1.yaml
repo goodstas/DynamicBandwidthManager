@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: bw-handler-1-deployment
+  labels:
+    app: bw-handler-1
+
+spec:
+
+  replicas: 1
+
+  selector:
+
+    matchLabels:
+
+      app: bw-handler-1
+
+  template:
+
+    metadata:
+
+      labels:
+
+        app: bw-handler-1
+
+    spec:
+
+      containers:
+
+      - name: bw-handler-1
+
+        image: me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-handler-image:v1.0.0
+        env:
+          - name: "ConnectionStrings__REDIS_CONNECTION_STRING"
+            value: "redis://34.165.78.173:6379"
+          - name: "DataHandlerConfig__RedisConnectionMultiplexer"
+            value: "34.165.78.173"
+          - name: "RunningChannelID"
+            value: "1"
+
+     

@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DataHandlerApp\DataHandlerApp.csproj" />
     <ProjectReference Include="..\DynamicBandwidthCommon\DynamicBandwidthCommon.csproj" />
   </ItemGroup>
 

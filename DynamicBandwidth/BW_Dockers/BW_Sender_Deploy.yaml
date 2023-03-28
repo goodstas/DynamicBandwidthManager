@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: bw-sender-deployment
+  labels:
+    app: bw-sender
+
+spec:
+
+  replicas: 1
+
+  selector:
+
+    matchLabels:
+
+      app: bw-sender
+
+  template:
+
+    metadata:
+
+      labels:
+
+        app: bw-sender
+
+    spec:
+
+      containers:
+
+      - name: bw-sender
+
+        image: me-west1-docker.pkg.dev/team12-380616/bw-management-docker-repo/bw-sender-image:v1.3.0
+        env:
+          - name: "DynamicBandwidthSenderConfiguration__RedisConnectionString"
+            value: "34.165.78.173:6379"
+          - name: "ApplicationUrl"
+            value: "http://0.0.0.0:8082"
+
+     

@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-lb
+  annotations:
+    cloud.google.com/backend-config: '{"default": "grafana-backendconfig"}'
+spec:
+  defaultBackend:
+    service:
+      name: grafana
+      port:
+        number: 3000

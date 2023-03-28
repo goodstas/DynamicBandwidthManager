@@ -37,22 +37,22 @@ services:
     # network_mode: host
     #depends_on:
     # - redis
-  bw_handler_track_plot:
-    image: "bw_handler:v0.0.1"
-    network_mode: host
-    environment:
-      - ApplicationUrl=http://localhost:5642
-      - ChannelsList=Track Plot
-    depends_on:
-      - redis
-  bw_handler_statuses:
-    image: "bw_handler:v0.0.1"
-    network_mode: host
-    environment:
-      - ApplicationUrl=http://localhost:5842
-      - ChannelsList=MissionStatus SensorStatus
-    depends_on:
-      - redis
+  #bw_handler_track_plot:
+   # image: "bw_handler:v0.0.1"
+   # network_mode: host
+   # environment:
+   #   - ApplicationUrl=http://localhost:5642
+   #   - ChannelsList=Track Plot
+   # depends_on:
+    #  - redis
+ # bw_handler_statuses:
+  #  image: "bw_handler:v0.0.1"
+ #   network_mode: host
+ #   environment:
+  #    - ApplicationUrl=http://localhost:5842
+   #   - ChannelsList=MissionStatus SensorStatus
+ #   depends_on:
+  #    - redis
 volumes:
   redis-data:
   prometheus-data:

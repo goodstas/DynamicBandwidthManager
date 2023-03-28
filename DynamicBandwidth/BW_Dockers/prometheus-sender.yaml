@@ -1,0 +1,11 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: bw-sender-prom
+spec:
+  selector:
+    matchLabels:
+      app: bw-sender
+  endpoints:
+  - port: 8082
+    interval: 5s
